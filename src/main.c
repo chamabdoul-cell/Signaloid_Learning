@@ -1,5 +1,5 @@
-#include <cstdio>
-#include <cmath>
+#include <stdio.h>
+#include <math.h>
 #include <random>
 #include <vector>
 #include <algorithm>
@@ -19,7 +19,7 @@ const double theta_std = 1;  // degrees
 const int N = 10000;
 
 /*
-  - The function computeRannge below Compute the range of a projectile given the initial velocity and angle.
+  - The function computeRange below Compute the range of a projectile given the initial velocity and angle.
 
   - v0 Initial velocity (in m/s)
   - theta Initial angle (in radians)
