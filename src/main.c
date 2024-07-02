@@ -1,10 +1,8 @@
 #include <stdio.h>
 #include <math.h>
-#include <random>
-#include <vector>
-#include <algorithm>
-
-using namespace std;
+#include <stdlib.h>
+#include <time.h>
+#include <signaloid.h>  // Include Signaloid's library
 
 // Constants
 const double g = 9.81;  // acceleration due to gravity (m/s^2)
@@ -19,7 +17,7 @@ const double theta_std = 1;  // degrees
 const int N = 10000;
 
 /*
-  - The function computeRange below Compute the range of a projectile given the initial velocity and angle.
+  - The function computeRange below computes the range of a projectile given the initial velocity and angle.
 
   - v0 Initial velocity (in m/s)
   - theta Initial angle (in radians)
@@ -30,47 +28,38 @@ double computeRange(double v0, double theta) {
 }
 
 int main() {
-    // convert to radians
+    // Convert to radians
     const double theta_mean_rad = M_PI / 180 * theta_mean;
     const double theta_std_rad = M_PI / 180 * theta_std;
 
-    // random samples for v0 and theta
-    random_device rd;
-    mt19937 gen(rd());
-    normal_distribution<double> v0_dist(v0_mean, v0_std);
-    normal_distribution<double> theta_dist(theta_mean_rad, theta_std_rad);
+    // Initialize Signaloid's random number generator
+    signaloid_init_random(time(NULL));
 
-    vector<double> v0_samples(N);
-    vector<double> theta_samples(N);
+    // Random samples for v0 and theta using Signaloid's functions
+    double v0_samples[N];
+    double theta_samples[N];
 
     for (int i = 0; i < N; i++) {
-        v0_samples[i] = v0_dist(gen);
-        theta_samples[i] = theta_dist(gen);
+        v0_samples[i] = signaloid_random_normal(v0_mean, v0_std);
+        theta_samples[i] = signaloid_random_normal(theta_mean_rad, theta_std_rad);
     }
 
-    // compute the range R
-    vector<double> R_samples(N);
+    // Compute the range R
+    double R_samples[N];
     for (int i = 0; i < N; i++) {
         R_samples[i] = computeRange(v0_samples[i], theta_samples[i]);
     }
 
     // Analyze the output uncertainties
-    double R_mean = 0.0;
-    for (double r : R_samples) {
-        R_mean += r;
-    }
-    R_mean /= N;
+    double R_mean = signaloid_mean(R_samples, N);
+    double R_std = signaloid_stddev(R_samples, N);
 
-    double R_std = 0.0;
-    for (double r : R_samples) {
-        R_std += (r - R_mean) * (r - R_mean);
-    }
-    R_std = sqrt(R_std / (N - 1));
+    // Sort the range samples
+    signaloid_sort(R_samples, N);
 
-    sort(R_samples.begin(), R_samples.end());
     double R_95_conf_interval[2] = {
-        R_samples[static_cast<int>(N * 0.025)],
-        R_samples[static_cast<int>(N * 0.975)]
+        R_samples[(int)(N * 0.025)],
+        R_samples[(int)(N * 0.975)]
     };
 
     // Print the results
