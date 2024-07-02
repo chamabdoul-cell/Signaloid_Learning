@@ -1,71 +1,78 @@
 #include <stdio.h>
-#include <math.h>
 #include <stdlib.h>
+#include <math.h>
 #include <time.h>
-#include <signaloid.h>  // Include Signaloid's library
 
-// Constants
-const double g = 9.81;  // acceleration due to gravity (m/s^2)
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
-// Input uncertainties
-const double v0_mean = 50;  // m/s
-const double v0_std = 2;  // m/s
-const double theta_mean = 45;  // degrees
-const double theta_std = 1;  // degrees
 
-// Number of simulations
-const int N = 10000;
+#define N 10000  // Number of simulations
+#define G 9.81   // Acceleration due to gravity (m/s^2)
 
-/*
-  - The function computeRange below computes the range of a projectile given the initial velocity and angle.
+// Function to generate a random number from a normal distribution using Box-Muller transform
+double randn(double mean, double std) {
+    double u1 = ((double) rand() / RAND_MAX);
+    double u2 = ((double) rand() / RAND_MAX);
+    double z0 = sqrt(-2.0 * log(u1)) * cos(2.0 * M_PI * u2);
+    return z0 * std + mean;
+}
 
-  - v0 Initial velocity (in m/s)
-  - theta Initial angle (in radians)
-  - return the range of the projectile (in m)
- */
-double computeRange(double v0, double theta) {
-    return (v0 * v0 * sin(2 * theta)) / g;
+// Comparison function for qsort
+int compare(const void *a, const void *b) {
+    double diff = *(double *)a - *(double *)b;
+    return (diff > 0) - (diff < 0);
 }
 
 int main() {
-    // Convert to radians
-    const double theta_mean_rad = M_PI / 180 * theta_mean;
-    const double theta_std_rad = M_PI / 180 * theta_std;
+    double v0_mean = 50.0;  // Mean initial velocity (m/s)
+    double v0_std = 2.0;    // Standard deviation of initial velocity (m/s)
+    double theta_mean_deg = 45.0;  // Mean launch angle (degrees)
+    double theta_std_deg = 1.0;    // Standard deviation of launch angle (degrees)
 
-    // Initialize Signaloid's random number generator
-    signaloid_init_random(time(NULL));
+    // Convert mean and std of angle to radians
+    double theta_mean = theta_mean_deg * M_PI / 180.0;
+    double theta_std = theta_std_deg * M_PI / 180.0;
 
-    // Random samples for v0 and theta using Signaloid's functions
-    double v0_samples[N];
-    double theta_samples[N];
+    // Seed the random number generator
+    srand(time(NULL));
 
+    // Arrays to store results
+    double *R_samples = (double *)malloc(N * sizeof(double));
+
+    // Monte Carlo simulation
     for (int i = 0; i < N; i++) {
-        v0_samples[i] = signaloid_random_normal(v0_mean, v0_std);
-        theta_samples[i] = signaloid_random_normal(theta_mean_rad, theta_std_rad);
+        double v0 = randn(v0_mean, v0_std);
+        double theta = randn(theta_mean, theta_std);
+        R_samples[i] = (v0 * v0 * sin(2 * theta)) / G;
     }
 
-    // Compute the range R
-    double R_samples[N];
+    // Calculate mean, standard deviation, and 95% confidence interval
+    double R_sum = 0.0;
     for (int i = 0; i < N; i++) {
-        R_samples[i] = computeRange(v0_samples[i], theta_samples[i]);
+        R_sum += R_samples[i];
     }
+    double R_mean = R_sum / N;
 
-    // Analyze the output uncertainties
-    double R_mean = signaloid_mean(R_samples, N);
-    double R_std = signaloid_stddev(R_samples, N);
+    double R_var_sum = 0.0;
+    for (int i = 0; i < N; i++) {
+        R_var_sum += (R_samples[i] - R_mean) * (R_samples[i] - R_mean);
+    }
+    double R_std = sqrt(R_var_sum / N);
 
-    // Sort the range samples
-    signaloid_sort(R_samples, N);
-
-    double R_95_conf_interval[2] = {
-        R_samples[(int)(N * 0.025)],
-        R_samples[(int)(N * 0.975)]
-    };
+    // Sort the results to calculate the confidence interval
+    qsort(R_samples, N, sizeof(double), compare);
+    double R_95_lower = R_samples[(int)(N * 0.025)];
+    double R_95_upper = R_samples[(int)(N * 0.975)];
 
     // Print the results
     printf("Mean range: %.2f m\n", R_mean);
     printf("Standard deviation of range: %.2f m\n", R_std);
-    printf("95%% confidence interval of range: %.2f m to %.2f m\n", R_95_conf_interval[0], R_95_conf_interval[1]);
+    printf("95%% confidence interval of range: %.2f m to %.2f m\n", R_95_lower, R_95_upper);
+
+    // Free allocated memory
+    free(R_samples);
 
     return 0;
 }
