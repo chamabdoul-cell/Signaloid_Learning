@@ -25,14 +25,7 @@ Model Output
 The range (R) of a projectile is given by:
 R=(v_0^2 sin⁡(2θ))/g
 
-We use Monte Carlo simulation to propagate the uncertainties through the model:
-	Generate N samples of v_0 and θ from their respective distributions.
-	Compute the range (R) for each sample.
-	Analyze the distribution of the resulting R values.
  
 The output will provide:
-	The mean range of the projectile.
-	The standard deviation of the range.
-	The 95% confidence interval for the range.
-This project illustrates how uncertainty tracing can be applied to a simple physics problem to understand the impact of input uncertainties on the output.
+	The range of the projectile.
 
