@@ -17,8 +17,8 @@ int main() {
 
     double v0, theta, R;
 
-    v0 = UxHwDoubleNormalDist(v0_mean, v0_std);
-    theta = UxHwDoubleNormalDist(theta_mean, theta_std);
+    v0 = UxHwDoubleLognormalDist(v0_mean, v0_std);
+    theta = UxHwDoubleLognormalDist(theta_mean, theta_std);
     R = (v0 * v0 * sin(2 * theta)) / G; // The range (R) of the projectile.
 
     // Print the results
