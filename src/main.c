@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 #include <uxhw.h>
 
 #ifndef M_PI
